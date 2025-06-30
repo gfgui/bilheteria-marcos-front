@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Plus, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+import { useCreateEvent } from "@/hooks/use-create-event"
 
 interface VenueSection {
   name: string
@@ -43,6 +44,8 @@ export function EventForm() {
   const [venueSections, setVenueSections] = useState<VenueSection[]>([
     { name: "", capacity: 0, ticketTypes: [{ name: "", price: 0, totalQuantity: 0 }] },
   ])
+
+  const createEvent = useCreateEvent()
 
   const addDay = () => {
     setDays([...days, { description: "", date: undefined }])
@@ -100,14 +103,41 @@ export function EventForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      alert("Event created successfully! (This is a mock - no data was actually saved)")
-      setLoading(false)
-      router.push("/admin/events")
-    }, 1000)
+    if (!formData.startDate || !formData.endDate) return
+
+    const payload = {
+      name: formData.name,
+      description: formData.description,
+      coverImage: formData.coverImage?.trim() || undefined,
+      startDate: formData.startDate.toISOString(),
+      endDate: formData.endDate.toISOString(),
+      days: days
+        .filter(day => day.date)
+        .map(day => ({
+          description: day.description,
+          date: day.date!.toISOString()
+        })),
+      venueSections: venueSections.map(section => ({
+        name: section.name,
+        capacity: section.capacity,
+        ticketTypes: section.ticketTypes.map(ticket => ({
+          name: ticket.name,
+          price: ticket.price,
+          totalQuantity: ticket.totalQuantity
+        }))
+      }))
+    }
+
+    createEvent.mutate(payload, {
+      onSuccess: () => {
+        router.push("/admin/events")
+      },
+      onError: (err) => {
+        alert("Failed to create event")
+        console.error(err)
+      }
+    })
   }
 
   return (
