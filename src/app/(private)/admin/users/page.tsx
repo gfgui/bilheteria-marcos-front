@@ -1,54 +1,21 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Users, User, Mail } from "lucide-react"
+import { Users, User as UserIcon, Mail, Trash2 } from "lucide-react"
 
-const mockUsers = [
-  {
-    id: "u1",
-    name: "John Smith",
-    email: "john.smith@example.com",
-    role: "CUSTOMER",
-    createdAt: new Date("2024-01-15"),
-  },
-  {
-    id: "u2",
-    name: "Sarah Johnson",
-    email: "sarah.johnson@example.com",
-    role: "CUSTOMER",
-    createdAt: new Date("2024-02-20"),
-  },
-  {
-    id: "u3",
-    name: "Mike Davis",
-    email: "mike.davis@example.com",
-    role: "CUSTOMER",
-    createdAt: new Date("2024-03-10"),
-  },
-  {
-    id: "u4",
-    name: "Emily Chen",
-    email: "emily.chen@example.com",
-    role: "CUSTOMER",
-    createdAt: new Date("2024-04-05"),
-  },
-  {
-    id: "u5",
-    name: "David Wilson",
-    email: "david.wilson@example.com",
-    role: "CUSTOMER",
-    createdAt: new Date("2024-05-12"),
-  },
-  {
-    id: "admin1",
-    name: "Admin User",
-    email: "admin@example.com",
-    role: "ADMIN",
-    createdAt: new Date("2024-01-01"),
-  },
-]
+import { CreateUserModal } from "@/components/users/create-user-modal"
+import { UpdateUserModal } from "@/components/users/update-user-modal"
+
+
+import { useDeleteUser, useUsers } from "@/hooks/use-users"
 
 export default function UsersPage() {
+  const { data: users, isLoading, isError } = useUsers()
+
+  const deleteUser = useDeleteUser()
+
   const getRoleColor = (role: string) => {
     switch (role) {
       case "ADMIN":
@@ -60,12 +27,26 @@ export default function UsersPage() {
     }
   }
 
+  if (isLoading) {
+    return <p>Loading users...</p>
+  }
+
+  if (isError || !users) {
+    return <p>Failed to load users.</p>
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Users</h1>
         <p className="text-muted-foreground">Manage system users and their roles</p>
       </div>
+
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Users</h1>
+        <CreateUserModal />
+      </div>
+
 
       <Card>
         <CardHeader>
@@ -86,11 +67,11 @@ export default function UsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockUsers.map((user) => (
+              {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
+                      <UserIcon className="h-4 w-4 text-muted-foreground" />
                       <div className="font-medium">{user.name}</div>
                     </div>
                   </TableCell>
@@ -103,7 +84,25 @@ export default function UsersPage() {
                   <TableCell>
                     <Badge className={getRoleColor(user.role)}>{user.role}</Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{user.createdAt.toLocaleDateString()}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <UpdateUserModal user={user} />
+                    <button
+                      onClick={() => {
+                        const confirmed = confirm(`Are you sure you want to delete ${user.name}?`)
+                        if (confirmed) {
+                          deleteUser.mutate(user.id)
+                        }
+                      }}
+                      className="text-red-600 hover:underline"
+                      title="Delete user"
+                    >
+                      <Trash2 className="inline h-4 w-4" />
+                    </button>
+                  </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>

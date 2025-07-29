@@ -23,8 +23,8 @@ export default async function middleware(req: NextRequest) {
   if ( pathname === "/login" && token){
     if(token?.role === "ADMIN"){
       return NextResponse.redirect(new URL("/admin", req.url));
-    } else if(token?.role === "COSTUMER") {
-      return NextResponse.redirect(new URL("/costumer", req.url));
+    } else if(token?.role === "CUSTOMER") {
+      return NextResponse.redirect(new URL("/customer", req.url));
     }
     return NextResponse.next();
   }
@@ -33,9 +33,8 @@ export default async function middleware(req: NextRequest) {
   if (pathname.startsWith("/admin") && token?.role !== "ADMIN") {
     return NextResponse.redirect(new URL("/unauthorized", req.url));
   }
-
   // Rota de spot apenas
-  if (pathname.startsWith("/costumer") && token?.role !== "COSTUMER") {
+  if (pathname.startsWith("/customer") && token?.role !== "CUSTOMER") {
     return NextResponse.redirect(new URL("/unauthorized", req.url));
   }
 

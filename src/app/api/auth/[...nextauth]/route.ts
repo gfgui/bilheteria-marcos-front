@@ -44,25 +44,34 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.name = user.name;
-        token.email = user.email;
-        token.role = user.role;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      session.user = {
-        id: token.id as string,
-        name: token.name as string,
-        email: token.email as string,
-        role: token.role as string,
-      };
-      return session;
-    },
+  async jwt({ token, user }) {
+    if (user) {
+      token.id = user.id;
+      token.name = user.name;
+      token.email = user.email;
+      token.role = user.role;
+
+      // ✅ GUARDA o accessToken do backend no JWT do NextAuth
+      token.accessToken = (user as any).token;
+    }
+
+    return token;
   },
+
+  async session({ session, token }) {
+    session.user = {
+      id: token.id as string,
+      name: token.name as string,
+      email: token.email as string,
+      role: token.role as string,
+    };
+
+    // ✅ REPASSA o accessToken para a session
+    session.accessToken = token.accessToken as string;
+
+    return session;
+  },
+},
   session: { strategy: "jwt" },
 };
 

@@ -14,6 +14,27 @@ import { CalendarIcon, Plus, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useCreateEvent } from "@/hooks/use-create-event"
+interface EventFormProps {
+  defaultValues?: {
+    name: string
+    description: string
+    coverImage?: string
+    startDate: string | Date
+    endDate: string | Date
+    days: { description: string; date: string | Date }[]
+    venueSections: {
+      name: string
+      capacity: number
+      ticketTypes: {
+        name: string
+        price: number
+        totalQuantity: number
+      }[]
+    }[]
+  }
+  isEditMode?: boolean
+  onSubmit?: (payload: any) => void
+}
 
 interface VenueSection {
   name: string
@@ -30,20 +51,34 @@ interface Day {
   date: Date | undefined
 }
 
-export function EventForm() {
+export function EventForm({ defaultValues, onSubmit }: EventFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    coverImage: "",
-    startDate: undefined as Date | undefined,
-    endDate: undefined as Date | undefined,
+    name: defaultValues?.name ?? "",
+    description: defaultValues?.description ?? "",
+    coverImage: defaultValues?.coverImage ?? "",
+    startDate: defaultValues?.startDate ? new Date(defaultValues.startDate) : undefined,
+    endDate: defaultValues?.endDate ? new Date(defaultValues.endDate) : undefined,
   })
-  const [days, setDays] = useState<Day[]>([{ description: "", date: undefined }])
-  const [venueSections, setVenueSections] = useState<VenueSection[]>([
-    { name: "", capacity: 0, ticketTypes: [{ name: "", price: 0, totalQuantity: 0 }] },
-  ])
+
+  const [days, setDays] = useState<Day[]>(
+    defaultValues?.days?.length
+      ? defaultValues.days.map(d => ({ description: d.description, date: new Date(d.date) }))
+      : [{ description: "", date: undefined }]
+  )
+
+  const [venueSections, setVenueSections] = useState<VenueSection[]>(
+    defaultValues?.venueSections?.length
+      ? defaultValues.venueSections
+      : [
+        {
+          name: "",
+          capacity: 0,
+          ticketTypes: [{ name: "", price: 0, totalQuantity: 0 }],
+        },
+      ]
+  )
 
   const createEvent = useCreateEvent()
 
@@ -129,15 +164,17 @@ export function EventForm() {
       }))
     }
 
-    createEvent.mutate(payload, {
-      onSuccess: () => {
-        router.push("/admin/events")
-      },
-      onError: (err) => {
-        alert("Failed to create event")
-        console.error(err)
-      }
-    })
+    if (onSubmit) {
+      onSubmit(payload)
+    } else {
+      createEvent.mutate(payload, {
+        onSuccess: () => router.push("/admin/events"),
+        onError: (err) => {
+          alert("Failed to create event")
+          console.error(err)
+        }
+      })
+    }
   }
 
   return (
@@ -401,7 +438,7 @@ export function EventForm() {
           Cancel
         </Button>
         <Button type="submit" disabled={loading}>
-          {loading ? "Creating..." : "Create Event"}
+          {loading ? "Saving..." : defaultValues ? "Update Event" : "Create Event"}
         </Button>
       </div>
     </form>

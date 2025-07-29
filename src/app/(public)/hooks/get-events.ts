@@ -17,7 +17,7 @@ export function useEvents() {
   return useQuery<Event[]>({
     queryKey: ["events"],
     queryFn: async () => {
-      const response = await api.get("/events") // ajuste conforme sua rota
+      const response = await api.get("/events/list")
       return response.data
     },
   })
